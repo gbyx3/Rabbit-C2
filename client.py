@@ -1,11 +1,10 @@
-import requests
-import json
 import subprocess
+import requests
 
-URL = "<CHANEGME>"
-AGENT_ID = "<CHANEGME>"
+URL = "<CHANGEME>"
+AGENT_ID = "<CHANGEME>"
 USERNAME = "<CHANGEME>"
-PASSWORD = "<CHANGEME>"
+PASSWORD = "<CHANGEME>
 USERAGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:139.0) Gecko/20100101 Firefox/139.0"
 HEADERS = {
     "X-Agent-ID": AGENT_ID,
@@ -23,8 +22,7 @@ CLIENT_KEY = None
 def get_queue():
     headers = HEADERS
     headers["X-Action"] = "get_queue"
-    r = requests.get(URL, headers=headers)
-    return r.json()
+    return requests.get(URL, headers=headers).json()
 
 
 def remove_from_queue(sequence):
@@ -43,8 +41,7 @@ def report_output(output, sequence):
     headers = HEADERS
     headers["X-Action"] = "report_output"
     data = {"result": output, "sequence": sequence}
-    response = requests.get(URL, headers=headers, json=data)
-    return response.json()
+    return requests.get(URL, headers=headers, json=data).json()
 
 
 if __name__ == "__main__":
