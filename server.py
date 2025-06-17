@@ -2,7 +2,8 @@ import bottle
 import json
 import datetime
 import redis
-import settings
+import uuid
+import os
 
 # Initialize the Bottle application
 app = bottle.Bottle()
@@ -11,7 +12,7 @@ app = bottle.Bottle()
 def agentcheck(fn):
     def _wrap(*args, **kwargs):
         agent = bottle.request.headers.get("X-Agent-ID", None)
-        trusted_agent = settings.agents.get(agent, None)
+        trusted_agent = read_redis(f"agent:{agent}", db=1)
         if trusted_agent:
             username = bottle.request.headers.get("X-Username", None)
             password = bottle.request.headers.get("X-Password", None)
@@ -28,12 +29,16 @@ def agentcheck(fn):
 
 def connect(db=0):
     """Connect to the Redis database."""
-    print("Connecting to Redis database...")
+    redis_password = os.getenv("REDIS_PASSWORD")
+    if not redis_password:
+        raise ConnectionError(
+            "Redis authentication failed: REDIS_PASSWORD environment variable not set."
+        )
     return redis.StrictRedis(
         "127.0.0.1",
         port=6379,
-        db=0,
-        password=settings.redis_password,
+        db=db,
+        password=redis_password,
     )
 
 
@@ -56,8 +61,10 @@ def read_redis(key, db=0):
 def get_queue():
     """Get the queue for the agent from the settings."""
     agent_id = bottle.request.headers.get("X-Agent-ID")
-    print(f"Agent ID: {agent_id}")
-    queue = settings.agents.get(agent_id, {}).get("queue", None)
+    agent_config = read_redis(f"agent:{agent_id}", db=1)
+    if not agent_config:
+        return False
+    queue = agent_config.get("queue", None)
     r = connect(0)
     now = datetime.datetime.now()
     formatted = now.strftime("%Y-%m-%d %H:%M")
@@ -67,7 +74,13 @@ def get_queue():
     return queue
 
 
-@app.route("/<filename:re:script\.js|style\.css|bg\.jpg>")
+# Error handler for AuthenticationError
+@app.error(500)
+def error500(error):
+    return bottle.static_file("error.html", root=".")
+
+
+@app.route("/<filename:re:script\.js|style\.css|bg\.jpg|error\.html>")
 def serve_static(filename):
     return bottle.static_file(filename, root=".")
 
@@ -86,7 +99,7 @@ def index():
             return {"result": "failed", "message": "Queue not found for agent."}
         return json.dumps(read_redis(queue_id) or [])
     elif action == "remove_from_queue":
-        sequence = request.headers.get("Sequence", None)
+        sequence = bottle.request.headers.get("Sequence", None)
         if not sequence:
             bottle.response.status = 400
             return {"result": "failed", "message": "Missing sequence in command"}
@@ -142,13 +155,14 @@ def index():
 
 @app.route("/admin/", method=["GET", "POST", "DELETE"])
 def admin():
-    r = connect()
+    r = connect(db=1)
     if bottle.request.method == "GET":
         agents_data = []
-        for agent_id, agent in settings.agents.items():
+        for key in r.keys("agent:*"):
+            agent_id = key.decode().replace("agent:", "")
+            agent = read_redis(f"agent:{agent_id}", db=1)
             queue = read_redis(agent["queue"]) if agent.get("queue") else []
-            last_connected = r.get(agent_id)
-            print(f"Agent ID: {agent_id}, Last Connected: {last_connected}")
+            last_connected = connect().get(agent_id)
             agents_data.append(
                 {
                     "id": agent_id,
@@ -162,19 +176,16 @@ def admin():
                     "photo": agent.get("photo"),
                 }
             )
-        print(json.dumps(agents_data, indent=4, sort_keys=True))
         return bottle.template("landing", agents=agents_data)
-
     elif bottle.request.method == "POST":
         try:
             data = bottle.request.json
-            agent_id = data.get("agent_id")
-            command = data.get("command")
-            print(f"Adding job for agent {agent_id} with command: {command}")
+            agent_id = data.get("agent_id", None)
+            command = data.get("command", None)
             if not agent_id or not command:
                 bottle.response.status = 400
                 return {"status": "failed", "message": "Missing agent_id or command"}
-            queue_id = settings.agents.get(agent_id, {}).get("queue")
+            queue_id = read_redis(f"agent:{agent_id}", db=1).get("queue")
             if not queue_id:
                 bottle.response.status = 404
                 return {"status": "failed", "message": "Agent not found"}
@@ -201,7 +212,7 @@ def admin():
             if not agent_id or not sequence:
                 bottle.response.status = 400
                 return {"status": "failed", "message": "Missing agent_id or sequence"}
-            queue_id = settings.agents.get(agent_id, {}).get("queue")
+            queue_id = read_redis(f"agent:{agent_id}", db=1).get("queue")
             if not queue_id:
                 bottle.response.status = 404
                 return {"status": "failed", "message": "Agent not found"}
@@ -226,10 +237,12 @@ def admin():
 
 @app.route("/agent/", method=["GET"])
 def agent_details():
-    r = connect()
+    r = connect(db=1)
     agent_id = bottle.request.query.get("agent_id", None)
     agents_data = []
-    for agent_id_key, agent in settings.agents.items():
+    for key in r.keys("agent:*"):
+        agent_id_key = key.decode().replace("agent:", "")
+        agent = read_redis(f"agent:{agent_id_key}", db=1)
         queue = read_redis(agent["queue"]) if agent.get("queue") else []
         agent_info = {
             "id": agent_id_key,
@@ -240,29 +253,59 @@ def agent_details():
         }
         if agent_id is None or agent_id_key == agent_id:
             agents_data.append(agent_info)
-    print(json.dumps(agents_data, indent=4, sort_keys=True))
     return bottle.template("index", agents=agents_data, agent_id=agent_id)
 
 
-@app.route("/refresh/", method=["GET"])
-def refresh_data():
-    r = connect()
-    agent_id = bottle.request.query.get("agent_id", None)
-    agents_data = []
-    for agent_id_key, agent in settings.agents.items():
-        queue = read_redis(agent["queue"]) if agent.get("queue") else []
-        agent_info = {
-            "id": agent_id_key,
-            "username": agent.get("username", "Unknown User"),
-            "queue": queue or [],
-            "queue_id": agent.get("queue", "No Queue"),
-            "name": agent.get("name", "Unknown Agent"),
+@app.route("/agent/manage/", method=["POST", "DELETE"])
+def manage_agent():
+    r = connect(db=1)
+    if bottle.request.method == "DELETE":
+        agent_id = bottle.request.query.get("agent_id", None)
+        if not agent_id:
+            bottle.response.status = 400
+            return {"result": "failed", "message": "Missing agent_id parameter"}
+
+        agent_key = f"agent:{agent_id}"
+        if not r.exists(agent_key):
+            bottle.response.status = 404
+            return {"result": "failed", "message": "Agent not found"}
+
+        r.delete(agent_key)
+        bottle.response.status = 200
+        return {
+            "result": "success",
+            "message": f"Agent {agent_id} deleted successfully",
         }
-        if agent_id is None or agent_id_key == agent_id:
-            agents_data.append(agent_info)
-    print(json.dumps(agents_data, indent=4, sort_keys=True))
-    return bottle.template("index", agents=agents_data, agent_id=agent_id)
+    elif bottle.request.method == "POST":
+        data = bottle.request.json
+        agent_id = uuid.uuid4().hex
+        username = data.get("agent_username")
+        password = data.get("agent_password")
+        name = data.get("agent_name", "Unknown Agent")
+        photo = data.get("agent_photo", None)
+
+        if not agent_id or not username or not password:
+            bottle.response.status = 400
+            return {"result": "failed", "message": "Missing required parameters"}
+
+        agent_key = f"agent:{agent_id}"
+        if r.exists(agent_key):
+            bottle.response.status = 400
+            return {"result": "failed", "message": "Agent already exists"}
+
+        agent_data = {
+            "id": agent_id,
+            "username": username,
+            "password": password,
+            "name": name,
+            "photo": photo,
+            "queue": f"queue:{agent_id}",
+        }
+
+        update_redis(agent_key, agent_data, db=1)
+        return {"result": "success", "message": f"Agent {agent_id} added successfully"}
+    return {"result": "unknown", "message": "Unsupported method"}
 
 
 if __name__ == "__main__":
-    app.run(host="localhost", port=8888, debug=True, reloader=True)
+    app.run(host="localhost", port=8000, debug=False, reloader=True)
