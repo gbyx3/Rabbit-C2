@@ -25,7 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
           const result = await response.json();
           if (result.status === "success") {
             input.value = "";
-            refreshJobList(agentId, card);
+              window.location.reload();
           } else {
             alert(`Error: ${result.message}`);
           }
@@ -48,7 +48,7 @@ document.addEventListener("DOMContentLoaded", () => {
           });
           const result = await response.json();
           if (result.status === "success") {
-            refreshJobList(agentId, card);
+            window.location.reload();
           } else {
             alert(`Error: ${result.message}`);
           }
@@ -69,56 +69,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
     });
-  }
-
-  async function refreshJobList(agentId, card) {
-    try {
-      const response = await fetch(`/refresh/?agent_id=${agentId}`);
-      const html = await response.text();
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, "text/html");
-      const newCard = doc.querySelector(
-        `.agent-card[data-agent-id="${agentId}"]`,
-      );
-      if (newCard && card) {
-        card.querySelector(".queue").innerHTML =
-          newCard.querySelector(".queue").innerHTML;
-        card.querySelectorAll(".delete-x").forEach((button) => {
-          button.addEventListener("click", async (e) => {
-            const jobItem = e.target.closest(".job-item");
-            const sequence = jobItem.dataset.sequence;
-            try {
-              const response = await fetch("/admin/", {
-                method: "DELETE",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ agent_id: agentId, sequence }),
-              });
-              const result = await response.json();
-              if (result.status === "success") {
-                refreshJobList(agentId, card);
-              } else {
-                alert(`Error: ${result.message}`);
-              }
-            } catch (error) {
-              alert(`Error: ${error.message}`);
-            }
-          });
-        });
-        card.querySelectorAll(".copy-output").forEach((button) => {
-          button.addEventListener("click", async (e) => {
-            const jobItem = e.target.closest(".job-item");
-            const output = jobItem.querySelector("pre").textContent;
-            try {
-              await navigator.clipboard.writeText(output);
-            } catch (error) {
-              alert(`Error copying output: ${error.message}`);
-            }
-          });
-        });
-      }
-    } catch (error) {
-      console.error("Error refreshing job list:", error);
-    }
   }
 
   // Agent Management Functionality
@@ -145,7 +95,6 @@ document.addEventListener("DOMContentLoaded", () => {
           body: JSON.stringify(data),
         });
         const result = await response.json();
-        alert(result.message);
         if (result.result === "success") {
           console.log("Agent added successfully: ", result.message);
           addAgentForm.classList.add("hidden");
@@ -166,7 +115,6 @@ document.addEventListener("DOMContentLoaded", () => {
             method: "DELETE",
           });
           const result = await response.json();
-          alert(result.message);
           if (result.result === "success") {
             window.location.href = "/admin/";
           }
