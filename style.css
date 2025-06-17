@@ -1,0 +1,219 @@
+/* Dark hacker theme with neon accents */
+:root {
+    --dark-bg: #1a1a1a;
+    --dark-card: #2a2a2a;
+    --dark-input: #333333;
+    --neon-green: #00ff00;
+    --neon-blue: #00b7eb;
+    --neon-blue-hover: #00d4ff;
+    --neon-red: #ff4444;
+    --glow: rgba(0, 255, 255, 0.3);
+}
+
+/* Body and background */
+body.bg-dark {
+    background: var(--dark-bg) url('bg.jpg') no-repeat center center fixed;
+    background-size: cover;
+    color: #ffffff;
+    font-family: 'Courier New', Courier, monospace;
+    position: relative;
+}
+
+/* Subtle rabbit background fallback (if image is missing) */
+body.bg-dark::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="rgba(255,255,255,0.1)"><text x="10" y="50" font-family="Courier" font-size="20">🐰</text></svg>') repeat;
+    z-index: -1;
+    opacity: 0.3;
+}
+
+/* Scanline overlay */
+.bg-overlay {
+    position: relative;
+    min-height: 100vh;
+}
+
+.bg-overlay::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(rgba(0, 0, 0, 0.2) 1px, transparent 1px);
+    background-size: 100% 3px;
+    opacity: 0.1;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Glitch effect for title */
+.glitch {
+    position: relative;
+    animation: glitch 2s infinite;
+}
+
+@keyframes glitch {
+    0% { transform: translate(0); }
+    10% { transform: translate(-2px, 2px); }
+    20% { transform: translate(2px, -2px); }
+    30% { transform: translate(0); }
+    100% { transform: translate(0); }
+}
+
+/* Agents container */
+#agents {
+    box-sizing: border-box;
+    width: 75%;
+    max-width: 75%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Agent card styling */
+.agent-card {
+    position: relative;
+    background: rgba(42, 42, 42, 0.7);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid var(--neon-blue);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border-radius: 8px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.agent-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0 15px var(--glow);
+}
+
+/* Summary card styling */
+.summary-card {
+    position: relative;
+    background: rgba(42, 42, 42, 0.7);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid var(--neon-blue);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.summary-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0 15px var(--glow);
+}
+
+/* Photo placeholder */
+.photo-placeholder {
+    background-color: #444444;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+/* Job item */
+.job-item {
+    position: relative;
+    transition: background 0.3s ease;
+}
+
+.job-item:hover {
+    background: rgba(0, 183, 235, 0.1);
+}
+
+/* Job item output */
+.job-item pre {
+    max-width: 1070px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+    margin: 0;
+    padding: 4px;
+    background-color: var(--dark-input);
+    font-size: 0.9rem;
+}
+
+.job-item pre:hover {
+    white-space: pre;
+    overflow: visible;
+    text-overflow: clip;
+    z-index: 10;
+    position: relative;
+    background-color: #222222;
+    border: 1px solid var(--neon-blue);
+    padding: 8px;
+}
+
+/* Delete X */
+.delete-x {
+    cursor: pointer;
+    font-size: 1.2rem;
+    line-height: 1;
+    vertical-align: middle;
+    transition: color 0.2s ease;
+}
+
+/* Copy output button */
+.copy-output {
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    vertical-align: middle;
+    transition: color 0.2s ease;
+    z-index: 20;
+}
+
+/* Input focus glow */
+.job-input:focus {
+    box-sizing: border-box;
+    box-shadow: 0 0 8px var(--neon-blue);
+}
+
+/* Remove Tailwind's default button outline */
+button:focus {
+    outline: none;
+}
+
+/* Modal Styles */
+#agent-modal {
+    z-index: 1000;
+}
+
+#agent-modal .bg-white {
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+/* Round button styling */
+.round-button {
+    position: fixed;
+    bottom: 50px;
+    left: 50px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: #000006;
+    border: none;
+    font-size: 1.5em;
+    color: #babb89;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 10px var(--glow);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.round-button:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 20px var(--glow);
+}

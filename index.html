@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rabbit-C2</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body class="bg-dark font-mono">
+    <div class="bg-overlay">
+        <div class="container mx-auto p-4">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-3xl font-bold text-neon-green glitch">Agent Details</h1>
+                <a href="/admin/" class="bg-neon-blue text-dark px-4 py-2 rounded hover:bg-neon-blue-hover transition-colors">All Agents</a>
+            </div>
+            <div id="agents" class="w-3/4 mx-auto grid grid-cols-1 gap-4">
+                % for agent in agents:
+                % if agent_id is None or agent['id'] == agent_id:
+                <div class="agent-card bg-dark-card p-4 rounded-lg shadow-glow" data-agent-id="{{agent['id']}}">
+                    <h2 class="text-xl font-semibold mb-2 text-neon-blue">{{agent['name']}}</h2>
+                    <p class="text-gray-400 mb-2">ID: {{agent['id']}}
+                    <button class="delete-agent text-neon-red hover:text-red-400 font-bold ml-2" id="delete-agent-btn" data-agent-id="{{agent['id']}}" aria-label="Delete agent {{agent['id']}}">×</button>
+                    </p>
+                    <div class="mb-4">
+                        <h3 class="text-lg font-medium text-neon-green">Add Job</h3>
+                        <input type="text" class="job-input w-full p-2 border border-neon-blue bg-dark-input text-gray-600 rounded mb-2 focus:outline-none focus:ring-2 focus:ring-neon-blue" placeholder="Enter command">
+                        <button class="add-job bg-neon-blue text-dark px-4 py-2 rounded hover:bg-neon-blue-hover transition-colors">Submit</button>
+                    </div>
+                    <div class="queue">
+                        <h3 class="text-lg font-medium mb-2 text-neon-green">Job Queue</h3>
+                        <ul class="job-list space-y-2">
+                            % for job in reversed(agent['queue']):
+                            <li class="job-item p-2 border border-neon-blue bg-dark-card rounded-lg flex justify-between items-center" data-sequence="{{job['sequence']}}">
+                                <div>
+                                    <p>
+                                        <strong class="text-neon-green">Sequence:</strong> {{job['sequence']}}
+                                        <button class="delete-x text-neon-red hover:text-red-400 font-bold ml-2" data-sequence="{{job['sequence']}}" aria-label="Delete job {{job['sequence']}}">×</button>
+                                    </p>
+                                    <p><strong class="text-neon-green">Command:</strong> <span class="text-gray-300">{{job['cmd']}}</span></p>
+                                    <p class="flex items-center">
+                                        <strong class="text-neon-green">Output:</strong>
+                                        <pre class="text-gray-300">{{job.get('output', 'Pending')}}</pre>
+                                        <button class="copy-output text-neon-green hover:text-neon-blue ml-2" title="Copy output to clipboard" aria-label="Copy output">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                            </svg>
+                                        </button>
+                                    </p>
+                                </div>
+                            </li>
+                            % end
+                        </ul>
+                    </div>
+                </div>
+                % end
+                % end
+            </div>
+        </div>
+    </div>
+    <script src="/script.js"></script>
+</body>
+</html>

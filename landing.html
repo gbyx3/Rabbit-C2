@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rabbit-C2</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/script.js"></script>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body class="bg-dark font-mono">
+    <div class="bg-overlay">
+        <div class="container mx-auto p-4">
+            <h1 class="text-3xl font-bold mb-6 text-center text-neon-green glitch">Rabbit-C2 - Agents</h1>
+            <div id="agents" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                % for agent in agents:
+                <a href="/agent/?agent_id={{agent['id']}}" class="summary-card bg-dark-card p-4 rounded-lg shadow-glow hover:shadow-lg transition-all">
+                    <div class="photo-placeholder w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mb-4">
+                        % if agent['photo']:
+                        <img src="{{agent['photo']}}" alt="{{agent['name']}}'s photo" class="w-full h-full rounded-full object-cover">
+                        % else:
+                        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                        </svg>
+                        % end
+                    </div>
+                    <h2 class="text-xl font-semibold mb-2 text-neon-blue">{{agent['name']}}</h2>
+                    <p class="text-gray-400 mb-2">ID: {{agent['id']}}</p>
+                    <p class="text-gray-400">Last Connected: {{agent.get('last_connected', 'Unknown')}}</p>
+                </a>
+                % end
+            </div>
+        </div>
+        <!-- Form for adding new agents -->
+        <form id="add-agent-form" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-dark-card p-6 rounded-lg shadow-glow w-full max-w-md">
+                <h2 class="text-2xl font-bold mb-4 text-neon-green">Add New Agent</h2>
+                <label for="agent-name" class="block text-gray-300 mb-2">Agent Name:</label>
+                <input type="text" id="agent-name" name="agent_name" class="w-full p-2 mb-4 bg-gray-800 text-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-neon-blue" required>
+                <label for="agent-username" class="block text-gray-300 mb-2">Agent Username:</label>
+                <input type="text" id="agent-username" name="agent_username" class="w-full p-2 mb-4 bg-gray-800 text-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-neon-blue" required>
+                <label for="agent-password" class="block text-gray-300 mb-2">Agent Password:</label>
+                <input type="password" id="agent-password" name="agent_password" class="w-full p-2 mb-4 bg-gray-800 text-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-neon-blue" required>
+                <label for="agent-photo" class="block text-gray-300 mb-2">Agent Photo URL:</label>
+                <input type="url" id="agent-photo" name="agent_photo" class="w-full p-2 mb-4 bg-gray-800 text-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-neon-blue">
+                <button type="submit" id="add-add-agent-btn" class="w-full bg-neon-green hover:bg-neon-blue text-white font-bold py-2 px-4 rounded transition-colors">Add Agent</button>
+                <button type="submit" id="cancle-add-agent-btn" class="w-full bg-neon-green hover:bg-neon-blue text-white font-bold py-2 px-4 rounded transition-colors">Cancle</button>
+            </div>
+        </form>
+        <button id="add-agent-btn" class="round-button">+</button>
+    </div>
+</body>
+</html>
